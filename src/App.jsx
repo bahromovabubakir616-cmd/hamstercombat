@@ -824,140 +824,224 @@ function App() {
       : `Qizil: ${ckCount().r} ta<br>Qora: ${ckCount().b} ta`;
 
   const badgeText = over ? "O'yin tugadi" : names[turn] || turn + " navbati";
+  const turnText =
+    gt === "chess"
+      ? turn === "w"
+        ? "White's Turn"
+        : "Black's Turn"
+      : turn === "r"
+        ? "Red's Turn"
+        : "Black's Turn";
+  const turnClass =
+    gt === "chess"
+      ? turn === "w"
+        ? "white-turn"
+        : "black-turn"
+      : turn === "r"
+        ? "red-turn"
+        : "black-turn";
+  const capturedLabel1 = gt === "chess" ? "White captured:" : "Red pieces:";
+  const capturedLabel2 = gt === "chess" ? "Black captured:" : "Black pieces:";
+  const capturedValue1 =
+    gt === "chess"
+      ? cw.map((x) => GLYPHS["b" + x]).join("") || "—"
+      : ckCount().r;
+  const capturedValue2 =
+    gt === "chess"
+      ? cbk.map((x) => GLYPHS["w" + x]).join("") || "—"
+      : ckCount().b;
+  const botActive = bot && turn === "b" && !over;
 
   return (
     <div id="app">
       {menuVisible ? (
-        <div id="menu">
-          <div className="gtitle">BOARD GAMES</div>
-          <div className="gsub">CHESS &amp; CHECKERS</div>
-          <div className="gcards">
+        <div id="mainMenu">
+          <h1 className="menu-title">BOARD GAMES</h1>
+
+          <div className="game-buttons">
             <div
-              className={`gcard ${gt === "chess" ? "sel" : ""}`}
-              id="cc"
+              className={`game-btn ${gt === "chess" ? "selected" : ""}`}
               onClick={() => selG("chess")}
             >
-              <div className="ci">♟</div>
-              <div className="cn">Shaxmat</div>
-              <div className="cd">Barcha qoidalar, AI bot</div>
+              <span className="game-btn-icon">♟</span>
+              <span className="game-btn-name">Chess</span>
+              <span className="game-btn-desc">Classic strategy game</span>
             </div>
             <div
-              className={`gcard ${gt === "checkers" ? "sel" : ""}`}
-              id="ck"
+              className={`game-btn ${gt === "checkers" ? "selected" : ""}`}
               onClick={() => selG("checkers")}
             >
-              <div className="ci">⛂</div>
-              <div className="cn">Shashka</div>
-              <div className="cd">Zanjirli sakrash, AI bot</div>
+              <span className="game-btn-icon">⛂</span>
+              <span className="game-btn-name">Checkers</span>
+              <span className="game-btn-desc">Jump and capture</span>
             </div>
           </div>
-          <div className="botrow">
-            <span>2 o'yinchi</span>
+
+          <div className="bot-toggle-container">
+            <span className="bot-toggle-label">vs Bot</span>
             <div
-              className={`tog ${bot ? "on" : ""}`}
-              id="btog"
+              className={`bot-toggle ${bot ? "active" : ""}`}
               onClick={togBot}
-            >
-              <div className="togdot"></div>
-            </div>
-            <span>Bot bilan</span>
+            ></div>
           </div>
-          <button className="sbtn" onClick={startG}>
-            Boshlash
-          </button>
         </div>
       ) : (
-        <div id="garea">
-          <div className="topbar">
-            <button className="bbtn" onClick={toMenu}>
-              ← Menyu
+        <div id="gameContainer">
+          <div className="game-header">
+            <h2 className="game-title">
+              {gt === "chess" ? "Chess" : "Checkers"}
+            </h2>
+            <button className="back-btn" onClick={toMenu}>
+              ← Back to Menu
             </button>
-            <span className="tbadge" id="tbadge">
-              {badgeText}
-            </span>
-            <span className="smsg" id="smsg">
-              {smsg}
-            </span>
           </div>
-          <div className="bwrap">
-            <div id="board">
-              {boardRows.map((r) =>
-                boardRows.map((c) => {
-                  const dark = (r + c) % 2 !== 0;
-                  const sqClass = ["sq", dark ? "dk" : "lt"];
-                  if (selectedSquareClass(r, c)) sqClass.push("sel2");
-                  if (hintSquareClass(r, c)) sqClass.push("hnt");
-                  const clickHandler =
-                    gt === "chess"
-                      ? () => chessClick(r, c)
-                      : () => checkersClick(r, c);
-                  const piece = gt === "chess" ? cb[r]?.[c] : ck[r]?.[c];
 
-                  return (
-                    <div
-                      key={`${r}-${c}`}
-                      className={sqClass.join(" ")}
-                      onClick={clickHandler}
-                    >
-                      {gt === "chess" && piece ? (
-                        <span className={piece[0] === "w" ? "pw" : "pb"}>
-                          {GLYPHS[piece]}
-                        </span>
-                      ) : null}
-                      {gt === "checkers" && piece ? (
-                        <div
-                          className={`ckp ${piece.col === "r" ? "ckr" : "ckb"}`}
-                        >
-                          {piece.king ? "♛" : ""}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                }),
-              )}
-            </div>
-            <div className="spanel">
-              <div className="psec">
-                <div className="plbl">Ma'lumot</div>
-                <div
-                  id="info"
-                  style={{ fontSize: 12, color: "#888", lineHeight: 2 }}
-                  dangerouslySetInnerHTML={{ __html: infoText }}
-                />
-                <div
-                  className="chain-hint"
-                  id="chainhint"
-                  style={{ display: chain ? "block" : "none" }}
-                >
-                  &#9650; Davom eting!
+          <div className="game-layout">
+            <div className="side-panel">
+              <div className="panel-title">Game Status</div>
+              <div className={`turn-indicator ${turnClass}`}>{turnText}</div>
+              <div className={`bot-indicator ${botActive ? "active" : ""}`}>
+                Bot is thinking<span>...</span>
+              </div>
+              <div
+                className={`game-status ${smsg ? (smsg.includes("Shahmat") ? "checkmate" : smsg.includes("Durang") ? "stalemate" : smsg.includes("xavf") ? "check" : "bot-thinking") : ""}`}
+              >
+                {smsg || "Game in Progress"}
+              </div>
+
+              <div className="panel-title" style={{ marginTop: 20 }}>
+                Captured Pieces
+              </div>
+              <div className="captured-pieces">
+                <div className="captured-section">
+                  <div className="captured-label">{capturedLabel1}</div>
+                  <div
+                    className={`captured-list ${gt === "chess" ? "white" : ""}`}
+                  >
+                    {capturedValue1}
+                  </div>
+                </div>
+                <div className="captured-section">
+                  <div className="captured-label">{capturedLabel2}</div>
+                  <div
+                    className={`captured-list ${gt === "chess" ? "black" : ""}`}
+                  >
+                    {capturedValue2}
+                  </div>
                 </div>
               </div>
-              <div className="psec">
-                <div className="plbl">Yurishlar</div>
-                <div className="mhist" id="mhist">
+            </div>
+
+            <div className="board-section">
+              <div className="board-wrapper">
+                <div className="board-with-coords">
+                  <div className="rank-labels">
+                    {[8, 7, 6, 5, 4, 3, 2, 1].map((rank) => (
+                      <span key={rank}>{rank}</span>
+                    ))}
+                  </div>
+                  <div>
+                    <div
+                      className={`chess-board ${gt !== "chess" ? "hidden" : ""}`}
+                      id="chessBoard"
+                    >
+                      {boardRows.map((r) =>
+                        boardRows.map((c) => {
+                          const dark = (r + c) % 2 !== 0;
+                          const sqClass = [
+                            "chess-square",
+                            dark ? "dark" : "light",
+                          ];
+                          if (selectedSquareClass(r, c))
+                            sqClass.push("selected");
+                          if (hintSquareClass(r, c)) {
+                            sqClass.push(
+                              cb[r]?.[c] ? "legal-capture" : "legal-move",
+                            );
+                          }
+                          const piece = cb[r]?.[c];
+                          return (
+                            <div
+                              key={`chess-${r}-${c}`}
+                              className={sqClass.join(" ")}
+                              onClick={() => chessClick(r, c)}
+                            >
+                              {piece ? (
+                                <span
+                                  className={`chess-piece ${piece[0] === "w" ? "white" : "black"}`}
+                                >
+                                  {GLYPHS[piece]}
+                                </span>
+                              ) : null}
+                            </div>
+                          );
+                        }),
+                      )}
+                    </div>
+
+                    <div
+                      className={`checkers-board ${gt !== "checkers" ? "hidden" : ""}`}
+                      id="checkersBoard"
+                    >
+                      {boardRows.map((r) =>
+                        boardRows.map((c) => {
+                          const dark = (r + c) % 2 !== 0;
+                          const sqClass = [
+                            "checkers-square",
+                            dark ? "dark" : "light",
+                          ];
+                          if (selectedSquareClass(r, c))
+                            sqClass.push("selected");
+                          if (hintSquareClass(r, c)) {
+                            sqClass.push(
+                              ck[r]?.[c] ? "legal-capture" : "legal-move",
+                            );
+                          }
+                          const piece = ck[r]?.[c];
+                          return (
+                            <div
+                              key={`checkers-${r}-${c}`}
+                              className={sqClass.join(" ")}
+                              onClick={() => checkersClick(r, c)}
+                            >
+                              {piece ? (
+                                <div
+                                  className={`checkers-piece ${piece.col === "r" ? "red" : "black"} ${piece.king ? "king" : ""}`}
+                                />
+                              ) : null}
+                            </div>
+                          );
+                        }),
+                      )}
+                    </div>
+
+                    <div className="coordinates">
+                      {"abcdefgh".split("").map((file) => (
+                        <span key={file}>{file}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button
+                className="btn"
+                onClick={gt === "chess" ? initChess : initCK}
+              >
+                New Game
+              </button>
+            </div>
+
+            <div className="side-panel">
+              <div className="panel-title">Move History</div>
+              <div className="move-history" id="moveHistory">
+                <div className="move-list" id="moveList">
                   {hist.map((m, i) => (
-                    <div key={i} style={{ lineHeight: 1.5 }}>
-                      <span style={{ color: "#444" }}>{i + 1}.</span> {m}
+                    <div key={i} className="move-item">
+                      <span className="move-number">{i + 1}.</span> {m}
                     </div>
                   ))}
                 </div>
               </div>
-              <div
-                id="thkdiv"
-                style={{
-                  display: thinking ? "block" : "none",
-                  padding: "4px 0",
-                }}
-              >
-                <span className="think">Bot o'ylayapti...</span>
-              </div>
-              <button
-                className="bbtn"
-                style={{ width: "100%", marginTop: 4 }}
-                onClick={gt === "chess" ? initChess : initCK}
-              >
-                &#8635; Yangi o'yin
-              </button>
             </div>
           </div>
         </div>
